@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coinbase Wallet</title>
+<style>
+:root{
+  --blue:#1652f0;
+  --bg:#f5f7fb;
+  --card:#fff;
+  --text:#101828;
+  --muted:#667085;
+  --line:#e5e7eb;
+  --green:#16a34a;
+  --red:#dc2626;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);color:var(--text);
+}
+body.dark{
+  --bg:#0c111b;--card:#151d2b;
+  --text:#f4f7fb;--muted:#a5b0c1;--line:#293548;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--line);
+  padding:16px 5%;display:flex;justify-content:space-between;
+  align-items:center;gap:15px;position:sticky;top:0;z-index:5;
+}
+.brand{font-size:22px;font-weight:800;color:var(--blue)}
+.top-actions{display:flex;gap:10px;align-items:center}
+.btn{
+  border:0;border-radius:10px;padding:12px 17px;
+  font-weight:700;background:var(--blue);color:white;
+}
+.btn.secondary{
+  background:var(--card);color:var(--text);
+  border:1px solid var(--line);
+}
+.btn:hover{filter:brightness(.95)}
+.container{max-width:1120px;margin:30px auto;padding:0 20px}
+.view{display:none}
+.view.active{display:block}
+.heading{
+  display:flex;justify-content:space-between;
+  align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;
+}
+h1{font-size:28px;margin:0 0 8px}
+h2{font-size:19px;margin:0 0 18px}
+p{color:var(--muted);line-height:1.6}
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:23px;margin-bottom:20px;
+}
+.balance-card{
+  background:linear-gradient(120deg,#1652f0,#4779ff);
+  color:white;padding:30px;border-radius:20px;
+}
+.balance-card p{color:#e0eaff;margin:0 0 12px}
+.balance{font-size:clamp(30px,6vw,44px);font-weight:800}
+.actions{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:12px;margin:20px 0;
+}
+.action{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:15px;padding:17px 8px;text-align:center;
+  color:var(--text);font-weight:700;
+}
+.action span{display:block;font-size:24px;margin-bottom:8px}
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:20px}
+.asset{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:15px 0;border-bottom:1px solid var(--line);gap:10px;
+}
+.asset:last-child{border:0}
+.coin{display:flex;align-items:center;gap:12px}
+.icon{
+  width:42px;height:42px;border-radius:50%;display:grid;
+  place-items:center;background:#edf2ff;color:#1652f0;font-weight:800;
+}
+.small{font-size:13px;color:var(--muted);margin-top:5px}
+form label{
+  display:block;font-size:14px;font-weight:700;margin:17px 0 8px;
+}
+input,select{
+  width:100%;padding:14px;border:1px solid var(--line);
+  border-radius:10px;background:var(--bg);color:var(--text);
+  outline:none;
+}
+input:focus,select:focus{border-color:var(--blue)}
+.form-actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.form-actions button{flex:1}
+.notice{
+  padding:13px;border-radius:10px;background:var(--bg);
+  border:1px solid var(--line);font-size:13px;
+  color:var(--muted);line-height:1.6;margin-top:15px;
+}
+.status{padding:14px;border-radius:10px;background:var(--bg);margin:15px 0}
+.progress{
+  height:10px;background:var(--line);border-radius:20px;
+  overflow:hidden;margin:14px 0;
+}
+.progress div{
+  width:0;height:100%;background:var(--blue);
+  transition:width .5s;
+}
+table{width:100%;border-collapse:collapse}
+th,td{
+  text-align:left;padding:14px 8px;
+  border-bottom:1px solid var(--line);font-size:14px;
+}
+th{color:var(--muted);font-weight:600}
+.positive{color:var(--green)}
+.negative{color:var(--red)}
+.empty{text-align:center;padding:25px;color:var(--muted)}
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  padding:14px 20px;background:#101828;color:white;
+  border-radius:12px;display:none;z-index:10;max-width:90%;
+}
+footer{text-align:center;padding:25px;color:var(--muted);font-size:12px}
+@media(max-width:720px){
+  .topbar{padding:14px 4%}
+  .container{padding:0 13px;margin:20px auto}
+  .grid{grid-template-columns:1fr}
+  .actions{grid-template-columns:repeat(2,1fr)}
+  .card{padding:18px}
+  h1{font-size:24px}
+  .top-actions .btn{padding:10px;font-size:12px}
+  table{min-width:510px}
+  .table-wrap{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">◉ coinbase</div>
+  <div class="top-actions">
+    <button class="btn secondary" onclick="toggleTheme()">◐ Theme</button>
+    <button class="btn secondary" onclick="go('dashboard')">Dashboard</button>
+  </div>
+</header>
+
+<main class="container">
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="view active">
+  <div class="heading">
+    <div><h1>My assets</h1><p>Your cryptocurrency portfolio</p></div>
+    <button class="btn secondary" onclick="go('history')">Transactions</button>
+  </div>
+
+  <div class="balance-card">
+    <p>Total portfolio balance · Simulated</p>
+    <div class="balance" id="totalBalance">$12,450.00</div>
+    <p id="balanceNote">Available simulated portfolio value</p>
+  </div>
+
+  <div class="actions">
+    <button class="action" onclick="go('buy')"><span>＋</span>Buy</button>
+    <button class="action" onclick="go('sell')"><span>↗</span>Sell</button>
+    <button class="action" onclick="go('swap')"><span>⇄</span>Swap</button>
+    <button class="action" onclick="go('withdraw')"><span>↗</span>Withdraw</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your crypto</h2>
+      <div id="assets"></div>
+    </div>
+    <div class="card">
+      <h2>Quick overview</h2>
+      <p>Portfolio assets</p>
+      <h2 id="assetCount">4 currencies</h2>
+      <hr style="border:0;border-top:1px solid var(--line)">
+      <p>Withdrawal requests</p>
+      <h2 id="withdrawCount">0</h2>
+      <p>Transactions recorded</p>
+      <h2 id="transactionCount">0</h2>
+      <button class="btn" style="width:100%" onclick="go('history')">View activity</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Recent activity</h2>
+    <div id="recent"></div>
+  </div>
+</section>
+
+<!-- BUY -->
+<section id="buy" class="view">
+  <div class="heading">
+    <h1>Buy cryptocurrency</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Back to dashboard</button>
+  </div>
+  <div class="card">
+    <p>Purchase assets using simulated USD funds.</p>
+    <form onsubmit="buyCoin(event)">
+      <label>Cryptocurrency</label>
+      <select id="buyCoin"></select>
+      <label>Amount in USD</label>
+      <input id="buyAmount" type="number" min="1" step=".01" placeholder="100.00" required>
+      <div class="notice">Purchases use the simulator's USD balance. No real payment is processed.</div>
+      <div class="form-actions">
+        <button class="btn secondary" type="button" onclick="go('dashboard')">Cancel</button>
+        <button class="btn">Buy crypto</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- SELL -->
+<section id="sell" class="view">
+  <div class="heading">
+    <h1>Sell cryptocurrency</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Back to dashboard</button>
+  </div>
+  <div class="card">
+    <p>Convert a crypto asset into simulated USD.</p>
+    <form onsubmit="sellCoin(event)">
+      <label>Asset to sell</label>
+      <select id="sellCoin"></select>
+      <label>Amount of crypto</label>
+      <input id="sellAmount" type="number" min=".00000001" step="any" required placeholder="0.01">
+      <p id="sellPreview">Estimated value: $0.00</p>
+      <div class="form-actions">
+        <button class="btn secondary" type="button" onclick="go('dashboard')">Cancel</button>
+        <button class="btn">Review sale</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- SWAP -->
+<section id="swap" class="view">
+  <div class="heading">
+    <h1>Swap assets</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Back to dashboard</button>
+  </div>
+  <div class="card">
+    <p>Exchange one simulated cryptocurrency for another.</p>
+    <form onsubmit="swapCoin(event)">
+      <label>From</label>
+      <select id="swapFrom"></select>
+      <label>Amount to exchange</label>
+      <input id="swapAmount" type="number" min=".00000001" step="any" required>
+      <label>To</label>
+      <select id="swapTo"></select>
+      <p id="swapPreview">Estimated exchange amount: —</p>
+      <div class="form-actions">
+        <button type="button" class="btn secondary" onclick="go('dashboard')">Cancel</button>
+        <button class="btn">Confirm swap</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- WITHDRAW -->
+<section id="withdraw" class="view">
+  <div class="heading">
+    <h1>Withdraw crypto</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Back to dashboard</button>
+  </div>
+  <div class="card">
+    <p>Enter the withdrawal details and review your request.</p>
+    <form id="withdrawForm" onsubmit="reviewWithdrawal(event)">
+      <label>Asset</label>
+      <select id="withdrawCoin"></select>
+      <label>Withdrawal amount</label>
+      <input id="withdrawAmount" type="number" min=".00000001" step="any" required placeholder="0.01">
+      <label>Destination wallet address</label>
+      <input id="walletAddress" required minlength="10" placeholder="Enter destination address">
+      <label>Network</label>
+      <select id="network" required>
+        <option value="">Select network</option>
+        <option>Bitcoin</option>
+        <option>Ethereum (ERC-20)</option>
+        <option>BNB Smart Chain (BEP-20)</option>
+        <option>Tron (TRC-20)</option>
+        <option>Solana</option>
+      </select>
+      <div class="notice">This is a simulator. Do not enter a real wallet address or expect a real transfer. Network compatibility matters for real cryptocurrency transfers.</div>
+      <div class="form-actions">
+        <button type="button" class="btn secondary" onclick="go('dashboard')">Cancel</button>
+        <button class="btn">Review withdrawal</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- VERIFICATION -->
+<section id="verify" class="view">
+  <div class="heading">
+    <h1>Confirm withdrawal</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Dashboard</button>
+  </div>
+  <div class="card">
+    <h2>Withdrawal summary</h2>
+    <div id="withdrawSummary"></div>
+    <label for="verifyCode">Simulator verification code</label>
+    <input id="verifyCode" inputmode="numeric" maxlength="4" placeholder="Enter 4-digit code">
+    <div class="notice">Testing code: 4295. This code is hard-coded for simulation and is not real account security.</div>
+    <div class="form-actions">
+      <button class="btn secondary" onclick="go('withdraw')" type="button">← Back</button>
+      <button class="btn" onclick="confirmWithdrawal()" type="button">Confirm request</button>
+    </div>
+    <p id="verifyMessage"></p>
+  </div>
+</section>
+
+<!-- WITHDRAWAL STATUS -->
+<section id="status" class="view">
+  <div class="heading">
+    <h1>Withdrawal status</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Dashboard</button>
+  </div>
+  <div class="card">
+    <h2 id="statusTitle">Request recorded</h2>
+    <p id="statusText">Your simulated withdrawal has been recorded.</p>
+    <div class="status">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <strong>Simulated processing</strong><strong id="percent">50%</strong>
+      </div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <p id="statusDetail">50% — simulated progress only. No blockchain transaction has been submitted.</p>
+    </div>
+    <div id="statusSummary"></div>
+    <button class="btn" onclick="go('history')" style="width:100%">View transactions</button>
+  </div>
+</section>
+
+<!-- HISTORY -->
+<section id="history" class="view">
+  <div class="heading">
+    <h1>Transaction history</h1>
+    <button class="btn secondary" onclick="go('dashboard')">← Back to dashboard</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Activity</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="historyRows"></tbody>
+      </table>
+    </div>
+    <div id="historyEmpty" class="empty" style="display:none">No transactions yet.</div>
+  </div>
+</section>
+
+</main>
+<footer>Independent wallet interface concept · Simulated assets only · No real funds or blockchain transactions</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const coins={
+ BTC:{name:"Bitcoin",symbol:"BTC",price:65000,icon:"₿"},
+ ETH:{name:"Ethereum",symbol:"ETH",price:3200,icon:"Ξ"},
+ SOL:{name:"Solana",symbol:"SOL",price:145,icon:"◎"},
+ USDT:{name:"Tether",symbol:"USDT",price:1,icon:"₮"},
+ USD:{name:"US Dollar",symbol:"USD",price:1,icon:"$"}
+};
+
+let balances={BTC:.1,ETH:1.5,SOL:10,USDT:2000,USD:0};
+let transactions=[];
+let pendingWithdrawal=null;
+
+const money=n=>new Intl.NumberFormat("en-US",{
+ style:"currency",currency:"USD"
+}).format(n);
+const fmt=(n,d=8)=>Number(n).toLocaleString("en-US",{
+ maximumFractionDigits:d
+});
+const value=s=>balances[s]*coins[s].price;
+const total=()=>Object.keys(balances).reduce((a,s)=>a+value(s),0);
+
+function toast(msg){
+ const el=document.getElementById("toast");
+ el.textContent=msg;el.style.display="block";
+ clearTimeout(window.toastTimer);
+ window.toastTimer=setTimeout(()=>el.style.display="none",2800);
+}
+function go(id){
+ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ window.scrollTo({top:0,behavior:"smooth"});
+ render();
+}
+function toggleTheme(){document.body.classList.toggle("dark")}
+function options(id,includeUSD=true){
+ const el=document.getElementById(id);
+ el.innerHTML=Object.keys(coins)
+ .filter(s=>includeUSD||s!=="USD")
+ .map(s=>`<option value="${s}">${coins[s].name} (${s})</option>`).join("");
+}
+function addTransaction(type,amount,symbol,status="Completed"){
+ transactions.unshift({
+  type,amount,symbol,status,date:new Date().toLocaleString()
+ });
+}
+function renderAssets(){
+ document.getElementById("totalBalance").textContent=money(total());
+ document.getElementById("assets").innerHTML=Object.keys(coins)
+ .map(s=>`<div class="asset">
+  <div class="coin"><div class="icon">${coins[s].icon}</div>
+  <div><strong>${coins[s].name}</strong><div class="small">${s}</div></div></div>
+  <div style="text-align:right"><strong>${fmt(balances[s],s==="USDT"||s==="USD"?2:6)}</strong>
+  <div class="small">${money(value(s))}</div></div></div>`).join("");
+ document.getElementById("assetCount").textContent=
+ Object.keys(coins).filter(s=>balances[s]>0).length+" currencies";
+ document.getElementById("withdrawCount").textContent=
+ transactions.filter(t=>t.type==="Withdrawal").length;
+ document.getElementById("transactionCount").textContent=transactions.length;
+ document.getElementById("recent").innerHTML=transactions.slice(0,4).map(t=>
+ `<div class="asset"><div><strong>${t.type}</strong>
+ <div class="small">${t.date}</div></div><div style="text-align:right">
+ <strong>${fmt(t.amount,6)} ${t.symbol}</strong>
+ <div class="small">${t.status}</div></div></div>`
+ ).join("")||'<div class="empty">Your activity will appear here.</div>';
+}
+function renderHistory(){
+ document.getElementById("historyRows").innerHTML=transactions.map(t=>
+ `<tr><td>${t.type}</td><td>${fmt(t.amount,6)} ${t.symbol}</td>
+ <td>${t.status}</td><td>${t.date}</td></tr>`).join("");
+ document.getElementById("historyEmpty").style.display=transactions.length?"none":"block";
+}
+function render(){
+ renderAssets();renderHistory();
+}
+function buyCoin(e){
+ e.preventDefault();
+ const s=document.getElementById("buyCoin").value;
+ const amount=Number(document.getElementById("buyAmount").value);
+ if(!Number.isFinite(amount)||amount<=0)return toast("Enter a valid amount.");
+ if(balances.USD<amount)return toast("Insufficient simulated USD balance. Sell crypto first to obtain USD.");
+ balances.USD-=amount;balances[s]+=amount/coins[s].price;
+ addTransaction("Buy",amount/coins[s].price,s);
+ render();toast("Simulated purchase completed.");go("dashboard");
+}
+function sellCoin(e){
+ e.preventDefault();
+ const s=document.getElementById("sellCoin").value;
+ const amount=Number(document.getElementById("sellAmount").value);
+ if(!Number.isFinite(amount)||amount<=0)return toast("Enter a valid amount.");
+ if(amount>balances[s])return toast("Insufficient "+s+" balance.");
+ balances[s]-=amount;balances.USD+=amount*coins[s].price;
+ addTransaction("Sell",amount,s);
+ render();toast("Simulated sale completed.");go("dashboard");
+}
+function swapCoin(e){
+ e.preventDefault();
+ const from=document.getElementById("swapFrom").value;
+ const to=document.getElementById("swapTo").value;
+ const amount=Number(document.getElementById("swapAmount").value);
+ if(from===to)return toast("Choose two different assets.");
+ if(!Number.isFinite(amount)||amount<=0)return toast("Enter a valid amount.");
+ if(amount>balances[from])return toast("Insufficient "+from+" balance.");
+ const received=amount*coins[from].price/coins[to].price;
+ balances[from]-=amount;balances[to]+=received;
+ addTransaction("Swap out",amount,from);
+ addTransaction("Swap in",received,to);
+ render();toast("Simulated swap completed.");go("dashboard");
+}
+function reviewWithdrawal(e){
+ e.preventDefault();
+ const s=document.getElementById("withdrawCoin").value;
+ const amount=Number(document.getElementById("withdrawAmount").value);
+ const address=document.getElementById("walletAddress").value.trim();
+ const network=document.getElementById("network").value;
+ if(!Number.isFinite(amount)||amount<=0)return toast("Enter a valid withdrawal amount.");
+ if(amount>balances[s])return toast("Insufficient "+s+" balance.");
+ if(!address||address.length<10)return toast("Enter a valid-looking destination address.");
+ if(!network)return toast("Select a network.");
+ pendingWithdrawal={s,amount,address,network};
+ document.getElementById("withdrawSummary").innerHTML=
+ `<div class="asset"><span>Asset</span><strong>${s}</strong></div>
+ <div class="asset"><span>Amount</span><strong>${fmt(amount,8)} ${s}</strong></div>
+ <div class="asset"><span>Estimated value</span><strong>${money(amount*coins[s].price)}</strong></div>
+ <div class="asset"><span>Network</span><strong>${network}</strong></div>
+ <div class="asset"><span>Destination</span><span style="overflow-wrap:anywhere">${escapeHTML(address)}</span></div>`;
+ document.getElementById("verifyCode").value="";
+ document.getElementById("verifyMessage").textContent="";
+ go("verify");
+}
+function escapeHTML(s){
+ return s.replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ })[c]);
+}
+function confirmWithdrawal(){
+ if(!pendingWithdrawal)return toast("No pending withdrawal request.");
+ if(document.getElementById("verifyCode").value.trim()!=="4295"){
+  document.getElementById("verifyMessage").textContent="Incorrect code. Please try again.";
+  return;
+ }
+ const {s,amount,network}=pendingWithdrawal;
+ if(amount>balances[s]){
+  document.getElementById("verifyMessage").textContent="Insufficient balance.";
+  return;
+ }
+ balances[s]-=amount;
+ addTransaction("Withdrawal",amount,s,"Recorded · simulated");
+ document.getElementById("statusTitle").textContent="Withdrawal request recorded";
+ document.getElementById("statusText").textContent="Your simulated withdrawal has been recorded.";
+ document.getElementById("percent").textContent="50%";
+ document.getElementById("progressBar").style.width="50%";
+ document.getElementById("statusDetail").textContent=
+ "50% — simulated progress only. No blockchain transaction has been submitted.";
+ document.getElementById("statusSummary").innerHTML=
+ `<div class="asset"><span>Amount deducted from simulated balance</span><strong>${fmt(amount,8)} ${s}</strong></div>
+ <div class="asset"><span>Network</span><strong>${network}</strong></div>
+ <div class="asset"><span>Request status</span><strong>Simulated · Not broadcast</strong></div>`;
+ pendingWithdrawal=null;
+ document.getElementById("withdrawForm").reset();
+ go("status");toast("Simu
